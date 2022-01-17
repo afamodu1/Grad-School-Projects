@@ -1,0 +1,89 @@
+---
+title: "Final Report Appendix"
+author: "Tomiwa Famodu"
+date: "12/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# project setup
+library(readr)
+library(tidyverse)
+library(stargazer)
+library(car)
+
+```
+
+
+```{r}
+# load in the data set
+
+
+final_data <- read_csv("C:/Users/tfamo/OneDrive - PennO365/897/Final Project Folder/Final Project Dataset.csv")
+
+
+```
+### Data Cleaning
+```{r}
+
+final_data = na.omit(final_data)
+final_data = distinct(final_data, enrollee_id, .keep_all = TRUE)
+
+final_data$experience = ifelse(final_data$experience == '<1', 0, final_data$experience)
+
+final_data$experience = ifelse(final_data$experience == '>20', 0, final_data$experience)
+
+final_data$experience = as.numeric(final_data$experience)
+
+```
+
+
+### Creating Logistic Regression Models
+
+```{r}
+
+model1 = glm(target ~ relevent_experience, data = final_data)
+
+model2 = glm(target ~ gender + education_level + major_discipline +experience, data = final_data)
+
+model3 = glm(target ~ gender + relevent_experience + education_level + major_discipline + experience, data = final_data)
+
+summary(model1)
+summary(model2)
+summary(model3)
+```
+
+### Table 5
+```{r, results = 'asis'}
+
+stargazer(model1, model2, model3, type = "html")
+
+```
+### Testing Linearity
+```{r}
+linearity <- glm(target ~ gender + relevent_experience + education_level + major_discipline + experience,  family=binomial(link='logit'), data = final_data)
+
+probabilities <- predict(linearity, type = "response")
+
+logodds <- predict(linearity)
+
+plotlin <- with(final_data, data.frame(experience = experience, logit = logodds))
+
+plot_experience <- ggplot(plotlin, aes(x = experience, y = logit))+
+geom_point()+
+labs(x = "experience", y = "log odds", title = "Graph 1") +
+geom_smooth(method = "loess", col = "#3e3e3e")+
+geom_smooth(method = "lm", col = "blue")
+plot_experience
+```
+
+### Testing Heteroscedacity
+```{r}
+
+vif(model3)
+
+```
